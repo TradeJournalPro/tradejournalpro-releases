@@ -25,13 +25,12 @@ jobs:
               print(exe[0]['browser_download_url'])
           ")
           echo "ASSET_NAME=$ASSET_NAME" >> $GITHUB_ENV
-          echo "ASSET_URL=$ASSET_URL" >> $GITHUB_ENV
-          wget -O "/tmp/$ASSET_NAME" "$ASSET_URL"
+          wget -O "$GITHUB_WORKSPACE/$ASSET_NAME" "$ASSET_URL"
 
       - name: Upload to Google Drive
         uses: adityak74/google-drive-upload-git-action@main
         with:
           credentials: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
-          filename: /tmp/${{ env.ASSET_NAME }}
+          filename: ${{ env.ASSET_NAME }}
           folderId: ${{ secrets.GDRIVE_FOLDER_ID }}
           overwrite: true

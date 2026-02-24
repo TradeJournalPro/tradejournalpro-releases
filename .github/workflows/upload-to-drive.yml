@@ -8,27 +8,30 @@ jobs:
   upload:
     runs-on: ubuntu-latest
     steps:
-      - name: Get release asset
-        id: get_asset
+      - name: Download release asset
         run: |
+          ASSET_NAME=$(echo '${{ toJson(github.event.release.assets) }}' | python3 -c "
+          import json, sys
+          assets = json.load(sys.stdin)
+          exe = [a for a in assets if a['name'].endswith('.exe')]
+          if exe:
+              print(exe[0]['name'])
+          ")
           ASSET_URL=$(echo '${{ toJson(github.event.release.assets) }}' | python3 -c "
           import json, sys
           assets = json.load(sys.stdin)
           exe = [a for a in assets if a['name'].endswith('.exe')]
           if exe:
               print(exe[0]['browser_download_url'])
-              print(exe[0]['name'], file=open('/tmp/asset_name.txt','w'))
           ")
+          echo "ASSET_NAME=$ASSET_NAME" >> $GITHUB_ENV
           echo "ASSET_URL=$ASSET_URL" >> $GITHUB_ENV
-
-      - name: Download release asset
-        run: |
-          wget -O /tmp/$(cat /tmp/asset_name.txt) "$ASSET_URL"
+          wget -O "/tmp/$ASSET_NAME" "$ASSET_URL"
 
       - name: Upload to Google Drive
         uses: adityak74/google-drive-upload-git-action@main
         with:
           credentials: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
-          filename: /tmp/$(cat /tmp/asset_name.txt)
+          filename: /tmp/${{ env.ASSET_NAME }}
           folderId: ${{ secrets.GDRIVE_FOLDER_ID }}
           overwrite: true
